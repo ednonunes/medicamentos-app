@@ -40,4 +40,19 @@ class MedicationController extends Controller
         // 3. Redireciona de volta para a listagem com uma mensagem de sucesso
         return redirect()->route('medications.index')->with('success', 'Medicamento cadastrado com sucesso!');
     }
+
+    // Remove o medicamento do banco de dados
+    public function destroy(Medication $medication)
+    {
+        // Segurança extra: Garante que o medicamento realmente pertence ao usuário logado
+        if ($medication->user_id !== Auth::id()) {
+            abort(403, 'Ação não autorizada.');
+        }
+
+        // Deleta o registro do banco de dados
+        $medication->delete();
+
+        // Redireciona de volta com mensagem de sucesso
+        return redirect()->route('medications.index')->with('success', 'Medicamento removido com sucesso!');
+    }
 }
