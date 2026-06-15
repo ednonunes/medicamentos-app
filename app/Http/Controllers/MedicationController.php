@@ -23,5 +23,21 @@ class MedicationController extends Controller
         return view('medications.create');
     }
     
-    // As outras funções (store, edit, etc) faremos a seguir
+    // Recebe os dados do formulário e grava no banco 
+    public function store(Request $request)
+    {
+        // 1. Validação por motivos de segurança
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'dosage' => 'required|string|max:255',
+            'interval_hours' => 'required|integer|min:1',
+            'start_time' => 'required',
+        ]);
+
+        // 2. Grava usando o relacionamento (insere o user_id automaticamente)
+        Auth::user()->medications()->create($validated);
+
+        // 3. Redireciona de volta para a listagem com uma mensagem de sucesso
+        return redirect()->route('medications.index')->with('success', 'Medicamento cadastrado com sucesso!');
+    }
 }
