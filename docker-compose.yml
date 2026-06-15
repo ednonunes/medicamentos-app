@@ -1,0 +1,57 @@
+services:
+  # Container do PHP, Composer e Node
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: medicamentos-app-img
+    container_name: medicamentos-app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    volumes:
+      - ./:/var/www
+    networks:
+      - medicamentos-network
+
+  # Container do Servidor Web Nginx
+  web:
+    image: nginx:alpine
+    container_name: medicamentos-web
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8080:80"  # Acesse via http://localhost:8080
+    volumes:
+      - ./:/var/www
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - medicamentos-network
+
+  # Container do Banco de Dados MySQL
+  db:
+    image: mysql:8.0
+    container_name: medicamentos-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: medicamentos_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: laravel_user
+    volumes:
+      - mysqldata:/var/lib/mysql
+    networks:
+      - medicamentos-network
+
+networks:
+  medicamentos-network:
+    driver: bridge
+
+volumes:
+  mysqldata:
+    driver: local
