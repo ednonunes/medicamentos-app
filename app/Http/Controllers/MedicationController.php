@@ -8,13 +8,12 @@ use Illuminate\Support\Facades\Auth;
 
 class MedicationController extends Controller
 {
-    // Esta função responde ao link "Medicamentos" que você criou no menu
+    // Listagem dos medicamentos
     public function index()
     {
-        // Pega os remédios do usuário logado
-        $medications = Auth::user()->medications;
-
-        // Retorna uma tela específica para a listagem (CRUD)
+        // Substituímos o ->medications por uma consulta com paginação (10 por página)
+        $medications = Auth::user()->medications()->paginate(10);
+        
         return view('medications.index', compact('medications'));
     }
 

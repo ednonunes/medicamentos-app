@@ -5,6 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: medicamentos-app-img
+    user: "${UID}:${GID}"
     container_name: medicamentos-app
     restart: unless-stopped
     tty: true
