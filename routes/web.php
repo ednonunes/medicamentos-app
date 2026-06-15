@@ -16,6 +16,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Esta linha cria automaticamente as rotas: index, create, store, edit, update, destroy
     Route::resource('medications', App\Http\Controllers\MedicationController::class);
 });
 
