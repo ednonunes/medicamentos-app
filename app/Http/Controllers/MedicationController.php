@@ -41,6 +41,37 @@ class MedicationController extends Controller
         return redirect()->route('medications.index')->with('success', 'Medicamento cadastrado com sucesso!');
     }
 
+    // Busca o medicamento para exibir no formulário de edição
+    public function edit(Medication $medication)
+    {
+        // Trava de segurança contra manipulação de URL
+        if ($medication->user_id !== Auth::id()) {
+            abort(403, 'Ação não autorizada.');
+        }
+
+        return view('medications.edit', compact('medication'));
+    }
+
+    // Recebe as edições e atualiza a linha correspondente no MySQL
+    public function update(Request $request, Medication $medication)
+    {
+        if ($medication->user_id !== Auth::id()) {
+            abort(403, 'Ação não autorizada.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'dosage' => 'required|string|max:255',
+            'interval_hours' => 'required|integer|min:1',
+            'start_time' => 'required',
+        ]);
+
+        // Executa a atualização com os dados validados
+        $medication->update($validated);
+
+        return redirect()->route('medications.index')->with('success', 'Medicamento atualizado com sucesso!');
+    }
+
     // Remove o medicamento do banco de dados
     public function destroy(Medication $medication)
     {
