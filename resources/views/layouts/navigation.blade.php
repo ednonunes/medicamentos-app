@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-emerald-50 dark:bg-emerald-950 border-b border-emerald-200/60 dark:border-emerald-800/50">
+<nav x-data="{ open: false }" class="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800/80 transition-colors duration-200">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -16,8 +16,12 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
-                    <x-nav-link :href="route('medications.index')" :active="request()->routeIs('medications.*')">
+                    <x-nav-link :href="route('medications.index')" :active="request()->routeIs('medications.*') && !request()->routeIs('medications.agenda')">
                         {{ __('Medicamentos') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('medications.agenda')" :active="request()->routeIs('medications.agenda')">
+                        {{ __('Agenda do dia') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -90,9 +94,14 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('medications.index')" :active="request()->routeIs('medications.*')">
+            <x-responsive-nav-link :href="route('medications.index')" :active="request()->routeIs('medications.*') && !request()->routeIs('medications.agenda')">
                 {{ __('Medicamentos') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('medications.agenda')" :active="request()->routeIs('medications.agenda')">
+                {{ __('Agenda do dia') }}
+            </x-responsive-nav-link>
+
         </div>
 
         <!-- Responsive Settings Options -->

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Medication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class MedicationController extends Controller
 {
@@ -84,5 +85,34 @@ class MedicationController extends Controller
 
         // Redireciona de volta com mensagem de sucesso
         return redirect()->route('medications.index')->with('success', 'Medicamento removido com sucesso!');
+    }
+
+    public function agenda()
+    {
+        $user = auth()->user();
+        $medications = $user->medications;
+        $agendaDoDia = [];
+
+        foreach ($medications as $medication) {
+            $doses = $medication->getNextDoses(); // Retorna array ex: ['08:00', '14:00', '20:00']
+            
+            foreach ($doses as $hora) {
+                $agendaDoDia[] = [
+                    'id' => $medication->id,
+                    'name' => $medication->name,
+                    'dosage' => $medication->dosage,
+                    'hora' => $hora,
+                    // Verifica se esta dose específica já passou do horário atual
+                    'ja_passou' => Carbon::createFromFormat('H:i', $hora)->isBefore(now()),
+                ];
+            }
+        }
+
+        // Ordena a agenda inteira pelo horário da dose (da mais cedo para a mais tarde)
+        usort($agendaDoDia, function ($a, $b) {
+            return strcmp($a['hora'], $b['hora']);
+        });
+
+        return view('medications.agenda', compact('agendaDoDia'));
     }
 }

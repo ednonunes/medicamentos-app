@@ -29,13 +29,13 @@
             @include('layouts.navigation')
 
             <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
+            @if (isset($header))
+                <header class="bg-white dark:bg-gray-950 shadow border-b border-gray-100 dark:border-gray-800/60 transition-colors duration-200">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
                 </header>
-            @endisset
+            @endif
 
             <!-- Page Content -->
             <main>

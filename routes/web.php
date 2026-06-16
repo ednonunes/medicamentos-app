@@ -16,6 +16,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Rota dedicada para a linha do tempo do dia
+    Route::get('/medications/agenda', [App\Http\Controllers\MedicationController::class, 'agenda'])->name('medications.agenda');
     // Esta linha cria automaticamente as rotas: index, create, store, edit, update, destroy
     Route::resource('medications', App\Http\Controllers\MedicationController::class);
 });
