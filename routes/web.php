@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\MedicationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,6 +19,10 @@ Route::middleware('auth')->group(function () {
 
     // Rota dedicada para a linha do tempo do dia
     Route::get('/medications/agenda', [App\Http\Controllers\MedicationController::class, 'agenda'])->name('medications.agenda');
+
+    // Salvar a medicação tomada:
+    Route::post('/medications/take', [MedicationController::class, 'takeDose'])->name('medications.take');
+
     // Esta linha cria automaticamente as rotas: index, create, store, edit, update, destroy
     Route::resource('medications', App\Http\Controllers\MedicationController::class);
 });

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Medication;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Database\Seeders\MedicationSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -23,12 +24,9 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('12345678'),
         ]);
 
-        // 2. Cria 50 medicamentos atrelados especificamente a este utilizador
-        Medication::factory()
-            ->count(50)
-            ->create([
-                'user_id' => $user->id,
-            ]);
+        $this->call([
+            MedicationSeeder::class,
+        ]);
 
         // 3. Opcional: Cria mais 5 utilizadores aleatórios, cada um com 5 remédios só para encher o banco
         User::factory(5)->create()->each(function ($otherUser) {

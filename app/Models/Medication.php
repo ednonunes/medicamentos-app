@@ -15,7 +15,12 @@ class Medication extends Model
         'name',
         'dosage',
         'interval_hours',
+        'days_of_week',
         'start_time',
+    ];
+
+    protected $casts = [
+        'days_of_week' => 'array',
     ];
 
     public function user()
@@ -47,4 +52,13 @@ class Medication extends Model
 
         return $doses;
     }
-} // 👈 O método getNextDoses precisa estar ANTES desta última chave que fecha a classe
+
+    /**
+     * Registro dos medicamentos já consumidos
+     */
+    public function logs()
+    {
+        return $this->hasMany(MedicationLog::class);
+    }
+
+} 
