@@ -34,20 +34,28 @@ class Medication extends Model
     public function getNextDoses(): array
     {
         $doses = [];
-        $interval = $this->interval_hours;
         
-        // Cria o Carbon com a hora inicial definida para o dia de hoje
-        $firstDose = Carbon::createFromFormat('H:i:s', $this->start_time);
-        
-        // Adiciona a primeira dose do dia
-        $doses[] = $firstDose->format('H:i');
+        // 🎯 Tenta ler com segundos (padrão vindo do MySQL), se falhar lê sem segundos (padrão vindo de inputs/testes)
+        try {
+            $startTime = Carbon::createFromFormat('H:i:s', $this->start_time);
+        } catch (\ArgumentsCountError|\Exception $e) {
+            $startTime = Carbon::createFromFormat('H:i', $this->start_time);
+        }
 
-        $currentDose = $firstDose;
-        
-        // Loop para preencher o restante do dia (máximo de 24 horas)
-        for ($i = 1; $i < (24 / $interval); $i++) {
-            $currentDose = $currentDose->copy()->addHours($interval);
+        $interval = $this->interval_hours;
+
+        // Alinha o primeiro horário para o início do dia atual
+        $currentDose = Carbon::today()->setHour($startTime->hour)->setMinute($startTime->minute);
+
+        // Retrocede o horário caso o início do remédio pertença ao ciclo de 24h anteriores
+        while ($currentDose->copy()->subHours($interval)->isToday()) {
+            $currentDose->subHours($interval);
+        }
+
+        // Gera todas as doses que se encaixam no dia de hoje
+        while ($currentDose->isToday()) {
             $doses[] = $currentDose->format('H:i');
+            $currentDose->addHours($interval);
         }
 
         return $doses;
