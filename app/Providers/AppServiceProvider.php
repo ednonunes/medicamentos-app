@@ -22,5 +22,9 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         App::setLocale('pt_BR');
+        // Força o uso de HTTPS se o ambiente não for local (produção/Railway)
+        if (config('app.env') !== 'local') {
+            URL::forceScheme('https');
+        }
     }
 }
