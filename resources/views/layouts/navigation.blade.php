@@ -46,6 +46,7 @@
                             </span>
                         </x-dropdown-link>
 
+                        <!-- 
                         <button id="theme-toggle" type="button" class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-700 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-700 dark:hover:text-emerald-300 focus:outline-none transition duration-150 ease-in-out">
                             <span class="flex items-center gap-2">
                                 <svg id="theme-toggle-dark-icon" class="hidden w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"></path></svg>
@@ -54,6 +55,7 @@
                                 <span id="theme-toggle-text">Alternar Tema</span>
                             </span>
                         </button>
+                        -->
 
                         <div class="border-t border-gray-100 dark:border-gray-800 my-1"></div>
 
