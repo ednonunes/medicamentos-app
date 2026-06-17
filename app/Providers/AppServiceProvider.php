@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,9 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
         App::setLocale('pt_BR');
-        // Força o uso de HTTPS se o ambiente não for local (produção/Railway)
+
+        // Se o ambiente não for local (ou seja, estiver no Railway), força o HTTPS
         if (config('app.env') !== 'local') {
             URL::forceScheme('https');
         }
