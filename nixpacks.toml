@@ -1,8 +1,2 @@
 [start]
 cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
-
-[phases.setup]
-nixPkgs = ["...", "cron"] # Mantém os pacotes padrão e garante que o ambiente tenha suporte a processos em background
-
-[start]
-cmd = "php artisan schedule:work & docker-php-entrypoint apache2-foreground"
