@@ -23,6 +23,9 @@ Route::middleware('auth')->group(function () {
     // Salvar a medicação tomada:
     Route::post('/medications/take', [MedicationController::class, 'takeDose'])->name('medications.take');
 
+    // Desfazer a medicação tomada:
+    Route::post('/medications/undo', [MedicationController::class, 'undo'])->name('medications.undo');
+
     // Esta linha cria automaticamente as rotas: index, create, store, edit, update, destroy
     Route::resource('medications', App\Http\Controllers\MedicationController::class);
 });

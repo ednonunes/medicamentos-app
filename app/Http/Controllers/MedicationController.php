@@ -76,7 +76,7 @@ class MedicationController extends Controller
 
         $medication->update($validated);
 
-        return redirect()->route('medications.index')->with('success', 'Medicamento atualizado com sucesso!');
+        return redirect()->route('medications.index')->with('success', 'Medicamento actualizado com sucesso!');
     }
 
     // Remove o medicamento do banco de dados
@@ -181,5 +181,32 @@ class MedicationController extends Controller
         }
 
         return redirect()->route('medications.agenda')->with('success', 'Dose registrada com sucesso!');
+    }
+
+    /**
+     * 🔄 Remove o registro da dose caso o usuário tenha clicado sem querer.
+     */
+    public function undo(Request $request)
+    {
+        $request->validate([
+            'medication_id' => 'required|exists:medications,id',
+            'scheduled_time' => 'required|string',
+        ]);
+
+        // Segurança: Valida se o medicamento realmente pertence ao usuário ativo
+        $medication = auth()->user()->medications()->findOrFail($request->medication_id);
+
+        // Encontra o log gerado hoje para este medicamento e horário específico
+        $log = MedicationLog::where('medication_id', $medication->id)
+            ->where('scheduled_time', $request->scheduled_time)
+            ->whereDate('taken_at', Carbon::today())
+            ->first();
+
+        if ($log) {
+            $log->delete();
+            return redirect()->route('medications.agenda')->with('success', 'Registro de dose desfeito!');
+        }
+
+        return redirect()->route('medications.agenda')->with('error', 'Não foi possível encontrar o registro desta dose.');
     }
 }
