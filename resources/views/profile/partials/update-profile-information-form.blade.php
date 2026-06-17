@@ -49,7 +49,7 @@
         
          <!-- Telefone -->
         <div class="mt-4" x-data>
-            <x-input-label for="phone" :value="__('Telefone a (Opcional)')" />
+            <x-input-label for="phone" :value="__('Telefone')" />
             <x-text-input 
                 id="phone" 
                 class="block mt-1 w-full" 

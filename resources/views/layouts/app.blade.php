@@ -41,6 +41,14 @@
             <main>
                 {{ $slot }}
             </main>
+
+            <footer class="w-full text-center py-6 text-xs text-slate-400 bg-white border-t border-slate-100 mt-auto">
+                &copy; {{ date('Y') }} Dose em Dia. Todos os direitos reservados.<br>
+                <span class="mt-1 block text-slate-500 font-medium">
+                    Desenvolvido por <a href="mailto:ednonunes@gmail.com" class="hover:text-blue-600 transition">Edno Nunes Ferreira (ednonunes@gmail.com)</a>
+                </span>
+            </footer>
+            
         </div>
 
         <x-confirm-modal />
