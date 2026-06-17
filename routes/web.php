@@ -30,4 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('medications', App\Http\Controllers\MedicationController::class);
 });
 
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/usuarios', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
+});
+
 require __DIR__.'/auth.php';
