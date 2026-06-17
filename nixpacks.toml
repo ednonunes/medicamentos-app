@@ -1,11 +1,2 @@
-[providers.php]
-# Força o Railway a entender que o diretório público é a pasta public
-webDir = "public"
-
-[phases.setup]
-# Garante a instalação do PHP e extensões necessárias para o Laravel
-nixPkgs = ["...", "php82", "php82Packages.composer"]
-
 [start]
-# O comando exato e limpo para iniciar o servidor
 cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
