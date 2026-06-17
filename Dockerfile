@@ -37,4 +37,4 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # 3. Altera o comando padrão da imagem (FPM) para o servidor embutido do Laravel,
 #    fazendo ele escutar dinamicamente a porta que o Railway exigir.
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
