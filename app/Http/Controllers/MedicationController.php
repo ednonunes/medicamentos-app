@@ -34,6 +34,8 @@ class MedicationController extends Controller
             'start_time' => 'required|date_format:H:i',
             'days_of_week' => 'nullable|array', // 👈 Valida como array opcional
             'days_of_week.*' => 'string',
+            'observations' => 'nullable|string',
+            'take_on_empty_stomach' => 'boolean', 
         ]);
 
         auth()->user()->medications()->create($validated);
@@ -63,6 +65,8 @@ class MedicationController extends Controller
             'start_time' => 'required|date_format:H:i',
             'days_of_week' => 'nullable|array', // 👈 Valida como array opcional
             'days_of_week.*' => 'string',
+            'observations' => 'nullable|string',
+            'take_on_empty_stomach' => 'boolean', 
         ]);
 
         // Se o usuário desmarcar todos os dias, garante que salve null no banco

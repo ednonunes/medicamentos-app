@@ -17,10 +17,13 @@ class Medication extends Model
         'interval_hours',
         'days_of_week',
         'start_time',
+        'observations',
+        'take_on_empty_stomach',
     ];
 
     protected $casts = [
         'days_of_week' => 'array',
+        'take_on_empty_stomach' => 'boolean',
     ];
 
     public function user()
@@ -35,7 +38,7 @@ class Medication extends Model
     {
         $doses = [];
         
-        // 🎯 Tenta ler com segundos (padrão vindo do MySQL), se falhar lê sem segundos (padrão vindo de inputs/testes)
+        // Tenta ler com segundos (padrão vindo do MySQL), se falhar lê sem segundos (padrão vindo de inputs/testes)
         try {
             $startTime = Carbon::createFromFormat('H:i:s', $this->start_time);
         } catch (\ArgumentsCountError|\Exception $e) {

@@ -19,6 +19,12 @@
         <input type="time" name="start_time" value="{{ old('start_time', isset($medication->start_time) ? \Carbon\Carbon::parse($medication->start_time)->format('H:i') : '') }}" required class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
     </div>
 </div>
+<div class="block mt-4">
+    <label for="take_on_empty_stomach" class="inline-flex items-center">
+        <input id="take_on_empty_stomach" type="checkbox" class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-emerald-600 shadow-sm focus:ring-emerald-500 dark:focus:ring-emerald-600" name="take_on_empty_stomach" value="1" {{ isset($medication->take_on_empty_stomach) &&  $medication->take_on_empty_stomach ? 'checked' : '' }}>
+        <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Tomar em jejum') }}</span>
+    </label>
+</div>
 
 <div class="mt-4">
     <x-input-label value="{{ __('Dias da Semana') }}" />
@@ -47,4 +53,10 @@
         @endforeach
     </div>
     <x-input-error :messages="$errors->get('days_of_week')" class="mt-2" />
+</div>
+
+<div class="mt-4">
+    <x-input-label for="observations" :value="__('Observações (exemplo: pode causar sonolência)')" />
+    <textarea id="observations" name="observations" placeholder="" rows="3" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">{{ old('observations', $medication->observations ?? '') }}</textarea>
+    <x-input-error :messages="$errors->get('observations')" class="mt-2" />
 </div>
