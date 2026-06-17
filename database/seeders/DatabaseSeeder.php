@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Utilizador de Teste',
             'email' => 'teste@email.com',
             'password' => bcrypt('12345678'),
+            'phone' => '5533999999999',
         ]);
 
         $this->call([

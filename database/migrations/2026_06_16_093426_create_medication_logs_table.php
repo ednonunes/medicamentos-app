@@ -18,7 +18,7 @@ return new class extends Migration
             // Guarda o horário teórico que estava agendado (ex: "14:00")
             $table->string('scheduled_time');
             // Guarda o momento exato em que o usuário clicou no botão
-            $table->timestamp('taken_at');
+            $table->timestamp('taken_at')->nullable();
             $table->timestamps();
         });
     }

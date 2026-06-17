@@ -46,6 +46,22 @@
                 </div>
             @endif
         </div>
+        
+         <!-- Telefone -->
+        <div class="mt-4" x-data>
+            <x-input-label for="phone" :value="__('Telefone a (Opcional)')" />
+            <x-text-input 
+                id="phone" 
+                class="block mt-1 w-full" 
+                type="text" 
+                name="phone"
+                placeholder="(31) 99999-9999"
+                x-mask="(99) 99999-9999" 
+                :value="old('phone', $user->phone)"
+            />
+            <p class="text-xs text-gray-500 mt-1">Opcional. Use para receber alertas de medicamentos no WhatsApp.</p>
+            <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+        </div>
 
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>

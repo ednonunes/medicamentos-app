@@ -9,6 +9,20 @@ use Illuminate\Validation\Rule;
 
 class ProfileUpdateRequest extends FormRequest
 {
+
+    /**
+     * Prepara os dados para validação (Sanitização)
+     */
+    protected function prepareForValidation()
+    {
+        // 🎯 Se o telefone foi enviado, limpa deixando apenas números
+        if ($this->has('phone') && !empty($this->phone)) {
+            $this->merge([
+                'phone' => preg_replace('/\D/', '', $this->phone),
+            ]);
+        }
+    }
+    
     /**
      * Get the validation rules that apply to the request.
      *
@@ -26,6 +40,7 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'phone' => ['nullable', 'string', 'max:20'],
         ];
     }
 }
