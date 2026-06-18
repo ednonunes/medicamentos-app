@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: medicamentos-app-img
-    user: "${UID}:${GID}"
+    user: "${UID}:${GID}" 
     container_name: medicamentos-app
     restart: unless-stopped
     tty: true
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     tty: true
     ports:
-      - "8080:80"  # Acesse via http://localhost:8080
+      - "8000:80"  # Acesse via http://localhost:8080
     volumes:
       - ./:/var/www
       - ./nginx.conf:/etc/nginx/conf.d/default.conf

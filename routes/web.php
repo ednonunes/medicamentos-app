@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MedicationController;
+use App\Http\Controllers\DiaryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -28,6 +29,11 @@ Route::middleware('auth')->group(function () {
 
     // Esta linha cria automaticamente as rotas: index, create, store, edit, update, destroy
     Route::resource('medications', App\Http\Controllers\MedicationController::class);
+
+    // Rotas do Diário
+    Route::delete('/diaries/{diary}/photos/{index}', [DiaryController::class, 'deletePhoto'])->name('diaries.photos.destroy');
+    Route::get('/diaries/export', [DiaryController::class, 'exportPDF'])->name('diaries.export');
+    Route::resource('diaries', DiaryController::class);
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {

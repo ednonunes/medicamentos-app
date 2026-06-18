@@ -1,6 +1,6 @@
 FROM php:8.3-fpm
 
-# Instala dependências do sistema e extensões do PHP
+# Instala dependências do sistema (com suporte a fontes e imagens para o Dompdf)
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -8,54 +8,37 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    unzip
+    unzip \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev
 
-# Limpa o cache
+# Limpa o cache do apt
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instala extensões do PHP necessárias para o Laravel e MySQL
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# CONFIGURAÇÃO DO GD: Ativa suporte a JPEG e Freetype para geração de PDFs
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Instala o Composer mais recente
+# Instala o Composer mais recente copiando da imagem oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Instala o Node.js e NPM
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
+# =========================================================
+# O PULO DO GATO: Copia o Node.js e NPM da imagem oficial!
+# =========================================================
+COPY --from=node:20-slim /usr/local/bin /usr/local/bin
+COPY --from=node:20-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 WORKDIR /var/www
 
-# ==========================================
-# ADICIONE ESTAS LINHAS ABAIXO NO SEU ARQUIVO:
-# ==========================================
-
-# 1. Copia todos os arquivos do seu projeto para dentro do container
+# Copia todos os arquivos do seu projeto para dentro do container
 COPY . .
 
-# 2. Instala as dependências do Composer (essencial para produção)
+# Instala as dependências do Composer para Produção
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# 3. Altera o comando padrão da imagem (FPM) para o servidor embutido do Laravel,
-#    fazendo ele escutar dinamicamente a porta que o Railway exigir.
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
-
-WORKDIR /var/www
-
-# 1. Copia todos os arquivos do seu projeto para dentro do container
-COPY . .
-
-# 2. Instala as dependências do Composer (Backend)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# ==========================================
-# ADICIONE ESTAS DUAS LINHAS DE FRONT-END AQUI:
-# ==========================================
-# 3. Instala as dependências do Node e compila os arquivos do Vite (CSS/JS)
+# Instala as dependências do Node e compila os arquivos do Vite
 RUN npm install
 RUN npm run build
 
-# ==========================================
-# AJUSTE O SEU CMD PARA EXECUTAR TUDO NA ORDEM:
-# ==========================================
-# 4. Roda as migrations e inicia o servidor
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+# Mantém o comando padrão da imagem base (php-fpm na porta 9000)
+CMD ["php-fpm"]

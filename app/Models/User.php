@@ -34,4 +34,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Medication::class);
     }
+
+    /**
+     * Define a relação de um usuário com seus registros no diário.
+     */
+    public function diaries()
+    {
+        return $this->hasMany(Diary::class);
+    }
 }
