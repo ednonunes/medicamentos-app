@@ -37,8 +37,12 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Instala as dependências do Node e compila os arquivos do Vite
-RUN npm install
-RUN npm run build
+RUN npm install \
+    && npm run build
 
-# Mantém o comando padrão da imagem base (php-fpm na porta 9000)
-CMD ["php-fpm"]
+# --- CONFIGURAÇÃO DO ENTRYPOINT ---
+# Dá permissão de execução para o script
+RUN chmod +x /var/www/entrypoint.sh
+
+# Define o script como a instrução de inicialização
+ENTRYPOINT ["/var/www/entrypoint.sh"]
