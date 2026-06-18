@@ -19,6 +19,7 @@ class Medication extends Model
         'start_time',
         'observations',
         'take_on_empty_stomach',
+        'daily_limit',
     ];
 
     protected $casts = [

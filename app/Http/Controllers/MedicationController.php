@@ -32,10 +32,11 @@ class MedicationController extends Controller
             'dosage' => 'required|string|max:255',
             'interval_hours' => 'required|integer|min:1|max:24',
             'start_time' => 'required|date_format:H:i',
-            'days_of_week' => 'nullable|array', // 👈 Valida como array opcional
+            'days_of_week' => 'nullable|array', 
             'days_of_week.*' => 'string',
             'observations' => 'nullable|string',
             'take_on_empty_stomach' => 'boolean', 
+            'daily_limit' => 'nullable|integer|min:1',
         ]);
 
         auth()->user()->medications()->create($validated);
@@ -63,10 +64,11 @@ class MedicationController extends Controller
             'dosage' => 'required|string|max:255',
             'interval_hours' => 'required|integer|min:1|max:24',
             'start_time' => 'required|date_format:H:i',
-            'days_of_week' => 'nullable|array', // 👈 Valida como array opcional
+            'days_of_week' => 'nullable|array', 
             'days_of_week.*' => 'string',
             'observations' => 'nullable|string',
             'take_on_empty_stomach' => 'boolean', 
+            'daily_limit' => 'nullable|integer|min:1',
         ]);
 
         // Se o usuário desmarcar todos os dias, garante que salve null no banco

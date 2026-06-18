@@ -9,9 +9,7 @@ use Carbon\Carbon;
 Schedule::call(function () {
     $agora = Carbon::now('America/Sao_Paulo')->startOfMinute();
     $dataHoje = $agora->format('Y-m-d');
-    
-    // Forçamos a primeira letra maiúscula para bater com o seu banco (ex: "Quarta-feira")
-    $diaDaSemanaAtual = ucfirst($agora->locale('pt_BR')->dayName); 
+    $diaDaSemanaAtual = ucfirst($agora->locale('pt_BR')->dayName);
 
     $medications = DB::table('medications')
         ->join('users', 'medications.user_id', '=', 'users.id')
@@ -21,95 +19,97 @@ Schedule::call(function () {
             'medications.id as medication_id',
             'medications.name as medication_name',
             'medications.dosage as medication_dosage',
-            'medications.start_time',        
-            'medications.interval_hours',    
-            'medications.days_of_week',      
+            'medications.start_time',
+            'medications.interval_hours',
+            'medications.daily_limit', // Campo adicionado
+            'medications.days_of_week',
             'medications.take_on_empty_stomach',
             'medications.observations',
+            'users.id as user_id',
             'users.name as user_name',
             'users.phone as user_phone'
         ])
         ->get();
 
+    if($medications->isEmpty()) {
+        return; 
+    }
+
+    $agrupamento = [];
+
     foreach ($medications as $medication) {
-        
-        // 1. Tratamento do dia da semana (Se for uma estrutura JSON ou string separada por vírgula)
+
+        // 1. Lógica do dia da semana
         if (!empty($medication->days_of_week)) {
-            // Tenta decodificar como JSON primeiro, se falhar, usa o explode tradicional
-            $diasMedicação = json_decode($medication->days_of_week, true);
-            if (!is_array($diasMedicação)) {
-                $diasMedicação = explode(',', $medication->days_of_week);
-            }
-            
-            // Limpa espaços em branco e padroniza a busca
+            $diasMedicação = json_decode($medication->days_of_week, true) ?? explode(',', $medication->days_of_week);
             $diasMedicação = array_map('trim', $diasMedicação);
 
-            if (!in_array($diaDaSemanaAtual, $diasMedicação)) {
-                Log::info("Remédio [{$medication->medication_name}] pulado: Hoje é {$diaDaSemanaAtual} e não está configurado para este dia.");
+            if (!in_array($diaDaSemanaAtual, $diasMedicação)) continue;
+        }
+        
+        // 2. Validação de horário da dose
+        $start = Carbon::createFromFormat('Y-m-d H:i:s', $dataHoje . ' ' . $medication->start_time, 'America/Sao_Paulo')->startOfMinute();
+        $diferencaEmHoras = $start->diffInHours($agora);
+        $ehHoraDaDose = ($diferencaEmHoras % $medication->interval_hours === 0) && ($start->format('i') === $agora->format('i'));
+
+        if (!$ehHoraDaDose) continue;
+
+        // 3. Checagem de Limite Diário (NOVO)
+        if ($medication->daily_limit) {
+            $dosesTomadasHoje = DB::table('medication_logs')
+                ->where('medication_id', $medication->medication_id)
+                ->whereDate('created_at', $dataHoje)
+                ->count();
+
+            if ($dosesTomadasHoje >= $medication->daily_limit) {
+                Log::info("Medicação [{$medication->medication_name}] ignorada: Limite de {$medication->daily_limit} doses atingido.");
                 continue;
             }
         }
 
-        // 2. Cálculo matemático do ciclo
-        $start = Carbon::createFromFormat('Y-m-d H:i:s', $dataHoje . ' ' . $medication->start_time, 'America/Sao_Paulo')->startOfMinute();
-        
-        if ($start->isFuture()) {
-            Log::info("Remédio [{$medication->medication_name}] pulado: start_time no futuro.");
-            continue;
-        }
-
-        $diferencaEmHoras = $start->diffInHours($agora);
-        
-        // Validação se a hora bate com o intervalo E se o minuto bate exatamente com o start_time original
-        $ehHoraDaDose = ($diferencaEmHoras % $medication->interval_hours === 0) && ($start->format('i') === $agora->format('i'));
-
-        if (!$ehHoraDaDose) {
-            Log::info("Remédio [{$medication->medication_name}] pulado: Não coincide com o ciclo de horas ou minutos.");
-            continue;
-        }
-
-        // 3. Checagem se já foi tomado
+        // 4. Checagem se o log deste horário específico já existe
         $jaTomou = DB::table('medication_logs')
             ->where('medication_id', $medication->medication_id)
             ->where('scheduled_time', $agora->format('Y-m-d H:i:00'))
             ->exists();
 
-        if ($jaTomou) {
-            Log::info("Remédio [{$medication->medication_name}] pulado: Já consta como tomado no log.");
-            continue;
-        }
+        if ($jaTomou) continue;
 
-        // 4. Montagem e Envio da Mensagem
+        // Adiciona ao agrupador
+        $agrupamento[$medication->user_id]['phone'] = $medication->user_phone;
+        $agrupamento[$medication->user_id]['name'] = $medication->user_name;
+        $agrupamento[$medication->user_id]['items'][] = $medication;
+    }
+
+    // Envio único por usuário
+    foreach ($agrupamento as $userData) {
         $texto = "⚠️ *Lembrete Dose em Dia* ⚠️\n\n";
-        $texto .= "Olá, *{$medication->user_name}*! Está na hora de tomar seu medicamento:\n\n";
-        $texto .= "💊 *Medicamento:* {$medication->medication_name}\n";
-        $texto .= "⚖️ *Dosagem:* {$medication->medication_dosage}\n";
-        $texto .= "🕒 *Horário:* " . $agora->format('H:i') . "\n";
+        $texto .= "Olá, *{$userData['name']}*! Está na hora dos seus medicamentos:\n\n";
 
-        if ($medication->take_on_empty_stomach) {
-            $texto .= "🍏 *Aviso:* Este medicamento deve ser tomado em *JEJUM*.\n";
+        foreach ($userData['items'] as $item) {
+            $texto .= "💊 *{$item->medication_name}* ({$item->medication_dosage})\n";
+            if ($item->take_on_empty_stomach) $texto .= "   └ 🍏 *Jejum*\n";
         }
 
-        if ($medication->observations) {
-            $texto .= "📝 *Observações:* _{$medication->observations}_\n";
-        }
+        $texto .= "\n🕒 *Horário:* " . $agora->format('H:i');
+        $texto .= "\n\nPor favor, registre no sistema após tomar! 👍";
 
-        $texto .= "\nPor favor, após tomar, acesse o sistema para registrar! 👍";
-
+        // envio
         try {
-            $response = Http::post(env('WHATSAPP_API_URL'), [
-                'phone' => '55' . $medication->user_phone,
+            $resposta = Http::withHeaders([
+                'Client-Token' => '34FDEF114E95A1BC86380A27' // Token extraído da sua URL
+            ])->post(env('WHATSAPP_API_URL'), [
+                'phone' => '55' . $userData['phone'],
                 'message' => $texto
             ]);
 
-            if ($response->successful()) {
-                Log::info("✅ WhatsApp enviado via Z-API para {$medication->user_name} - Remédio: {$medication->medication_name}");
+            if ($resposta->successful()) {
+                Log::info("✅ Notificação enviada para {$userData['name']}");
             } else {
-                Log::error("❌ Falha Z-API no medicamento {$medication->medication_name}: " . $response->body());
+                Log::error("❌ Erro na Z-API: " . $resposta->body());
             }
-
         } catch (\Exception $e) {
-            Log::error("❌ Erro de conexão na Z-API: " . $e->getMessage());
+            Log::error("❌ Erro de conexão com Z-API: " . $e->getMessage());
         }
     }
 })->everyMinute();
