@@ -83,8 +83,10 @@ Schedule::call(function () {
 
     // Envio único por usuário
     foreach ($agrupamento as $userData) {
-        $texto = "⚠️ *Lembrete Dose em Dia* ⚠️\n\n";
-        $texto .= "Olá, *{$userData['name']}*! Está na hora dos seus medicamentos:\n\n";
+
+        $primeiroNome = explode(' ', trim($userData['name']))[0];
+        $texto = "⚠️ *Lembrete Dose em Dia* ⚠️\n\n";        
+        $texto .= "Olá, *{$primeiroNome}*! Está na hora dos seus medicamentos:\n\n";
 
         foreach ($userData['items'] as $item) {
             $texto .= "💊 *{$item->medication_name}* ({$item->medication_dosage})\n";
@@ -104,7 +106,7 @@ Schedule::call(function () {
             ]);
 
             if ($resposta->successful()) {
-                Log::info("✅ Notificação enviada para {$userData['name']}");
+                // Log::info("✅ Notificação enviada para {$userData['name']}");
             } else {
                 Log::error("❌ Erro na Z-API: " . $resposta->body());
             }
