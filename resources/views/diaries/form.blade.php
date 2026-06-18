@@ -57,8 +57,7 @@
 </div>
 
 <script>
-
-    // 1. Função de Atalhos (A que estava faltando)
+    // 1. Função de Atalhos
     function adicionarAtalho(texto) {
         const textarea = document.getElementById('content-textarea');
         const valorAtual = textarea.value;
@@ -86,6 +85,31 @@
         }
     });
 
+    // NOVA FUNÇÃO: Sincroniza os índices do HTML com o comportamento do array_values() do PHP
+    function reindexarFotosEstaticas() {
+        // Pega todos os blocos de fotos remanescentes que estão renderizados
+        const containers = document.querySelectorAll('[id^="foto-item-"]');
+        
+        containers.forEach((div, novoIndice) => {
+            // Atualiza o ID do próprio container container
+            div.id = `foto-item-${novoIndice}`;
+            
+            // Localiza o botão dentro deste container e atualiza o seu evento de clique
+            const botao = div.querySelector('button');
+            if (botao) {
+                // Extrai o ID do diário atual dinamicamente do atributo anterior
+                const onClickAtual = botao.getAttribute('onclick');
+                const matchStr = onClickAtual.match(/deletarFoto\('\d+',\s*'(\d+)'/);
+                
+                if (matchStr && matchStr[1]) {
+                    const diaryId = matchStr[1];
+                    // Atribui o novo índice corrigido ao botão
+                    botao.setAttribute('onclick', `deletarFoto('${novoIndice}', '${diaryId}', 'foto-item-${novoIndice}')`);
+                }
+            }
+        });
+    }
+
     async function deletarFoto(index, diaryId, elementId) {
         if (!confirm('Deseja realmente excluir esta foto?')) return;
 
@@ -99,9 +123,13 @@
             });
 
             if (response.ok) {
+                // Remove o elemento da tela
                 document.getElementById(elementId).remove();
-                fotosExistentes--; // Decrementa o contador
-                atualizarSlots();  // Atualiza o texto de ajuda
+                fotosExistentes--; 
+                atualizarSlots();  
+                
+                // CORREÇÃO DO BUG: Alinha os índices visuais com o banco após o array_values() do Laravel
+                reindexarFotosEstaticas();
             } else {
                 alert('Erro ao excluir foto.');
             }
@@ -110,6 +138,4 @@
             alert('Falha na conexão.');
         }
     }
-    
-    // ... (função adicionarAtalho permanece igual) ...
 </script>

@@ -125,4 +125,21 @@ class DiaryController extends Controller
 
         return $pdf->stream('relatorio_diario_saude.pdf');
     }
+
+    public function destroy(Diary $diary)
+    {
+        // 1. Verifica se existem fotos vinculadas a este registro
+        if ($diary->photos && is_array($diary->photos)) {
+            foreach ($diary->photos as $photo) {
+                // Remove o arquivo físico da foto dentro do disco público
+                Storage::disk('public')->delete($photo);
+            }
+        }
+
+        // 2. Apaga o registro do diário do banco de dados
+        $diary->delete();
+
+        // 3. Redireciona o usuário com uma mensagem de sucesso
+        return redirect()->route('diaries.index')->with('success', 'Registro excluído com sucesso!');
+    }
 }
