@@ -72,6 +72,9 @@ class MedicationController extends Controller
             'daily_limit' => 'nullable|integer|min:1',
         ]);
 
+        // se desmarcar a flag jejjum:
+        $validated['take_on_empty_stomach'] = $request->has('take_on_empty_stomach') ? true : false;
+
         // Se o usuário desmarcar todos os dias, garante que salve null no banco
         if (!isset($validated['days_of_week'])) {
             $validated['days_of_week'] = null;
