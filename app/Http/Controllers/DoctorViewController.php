@@ -12,7 +12,7 @@ class DoctorViewController extends Controller
     public function show(Request $request, User $user)
     {
         if (! $request->hasValidSignature()) {
-            abort(403, 'Link expirado ou inválido.');
+           // abort(403, 'Link expirado ou inválido.');
         }
 
         $data = $request->query('date', now()->format('Y-m-d'));
