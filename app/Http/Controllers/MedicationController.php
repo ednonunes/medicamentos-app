@@ -175,7 +175,7 @@ class MedicationController extends Controller
         $request->validate([
             'medication_id' => 'required|exists:medications,id',
             'scheduled_time' => 'required|string',
-            'date' => 'required|date', // Valida a data vinda do form
+            'date' => 'required|date',
         ]);
 
         $medication = auth()->user()->medications()->findOrFail($request->medication_id);
@@ -183,20 +183,18 @@ class MedicationController extends Controller
 
         $jaExiste = MedicationLog::where('medication_id', $medication->id)
             ->where('scheduled_time', $request->scheduled_time)
-            ->whereDate('taken_at', $dataSelecionada) // Usa a data do formulário
+            ->whereDate('taken_at', $dataSelecionada)
             ->exists();
 
         if (!$jaExiste) {
             MedicationLog::create([
                 'medication_id' => $medication->id,
                 'scheduled_time' => $request->scheduled_time,
-                'taken_at' => $dataSelecionada . ' ' . now()->format('H:i:s'), // Salva com a data correta
+                'taken_at' => $dataSelecionada . ' ' . now()->format('H:i:s'),
             ]);
         }
 
-        // Redireciona de volta para a mesma data
-        return redirect()->route('medications.agenda', ['date' => $dataSelecionada])
-                        ->with('success', 'Dose registrada!');
+        return response()->json(['success' => true, 'message' => 'Dose registrada!']);
     }
 
     public function undo(Request $request)
@@ -212,14 +210,14 @@ class MedicationController extends Controller
 
         $log = MedicationLog::where('medication_id', $medication->id)
             ->where('scheduled_time', $request->scheduled_time)
-            ->whereDate('taken_at', $dataSelecionada) // Usa a data do formulário
+            ->whereDate('taken_at', $dataSelecionada)
             ->first();
 
         if ($log) {
             $log->delete();
         }
 
-        return redirect()->route('medications.agenda', ['date' => $dataSelecionada])
-                        ->with('success', 'Registro desfeito!');
+        return response()->json(['success' => true, 'message' => 'Registro desfeito!']);
     }
+
 }
