@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\DiaryController;
+use App\Http\Controllers\DoctorViewController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -19,7 +22,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Rota dedicada para a linha do tempo do dia
-    Route::get('/medications/agenda', [App\Http\Controllers\MedicationController::class, 'agenda'])->name('medications.agenda');
+    Route::get('/medications/agenda', [MedicationController::class, 'agenda'])->name('medications.agenda');
 
     // Salvar a medicação tomada:
     Route::post('/medications/take', [MedicationController::class, 'takeDose'])->name('medications.take');
@@ -28,7 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/medications/undo', [MedicationController::class, 'undo'])->name('medications.undo');
 
     // Esta linha cria automaticamente as rotas: index, create, store, edit, update, destroy
-    Route::resource('medications', App\Http\Controllers\MedicationController::class);
+    Route::resource('medications', MedicationController::class);
 
     // Rotas do Diário
     Route::delete('/diaries/{diary}/photos/{index}', [DiaryController::class, 'deletePhoto'])->name('diaries.photos.destroy');
@@ -37,7 +40,12 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
-    Route::get('/usuarios', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
+    Route::get('/usuarios', [UserController::class, 'index'])->name('admin.users.index');
 });
+
+// visualização médica:
+Route::get('/diario-medico/{user}', [App\Http\Controllers\DoctorViewController::class, 'show'])
+    ->name('doctor.view')
+    ->middleware('signed');
 
 require __DIR__.'/auth.php';

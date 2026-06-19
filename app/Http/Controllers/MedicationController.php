@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\MedicationLog;
+use Illuminate\Support\Facades\URL;
 
 class MedicationController extends Controller
 {
@@ -96,13 +97,18 @@ class MedicationController extends Controller
         return redirect()->route('medications.index')->with('success', 'Medicamento removido com sucesso!');
     }
 
-    public function agenda()
+    public function agenda(Request $request)
     {
         $user = auth()->user();
         $medications = $user->medications;
+        
+        // 1. Captura a data selecionada ou usa hoje como padrão
+        $dataSelecionada = $request->input('date', now()->format('Y-m-d'));
+        $dataCarbon = \Carbon\Carbon::parse($dataSelecionada);
+        
         $agendaDoDia = [];
 
-        // Array de tradução para converter o formato 'l' do Carbon (inglês) para português
+        // Array de tradução
         $diasTraduzidos = [
             'Sunday'    => 'Domingo',
             'Monday'    => 'Segunda-feira',
@@ -113,24 +119,25 @@ class MedicationController extends Controller
             'Saturday'  => 'Sábado',
         ];
 
-        // Pega o dia de hoje em inglês e converte para o equivalente em português
-        $diaIngles = now()->format('l'); 
-        $hojeEmPortugues = $diasTraduzidos[$diaIngles];
+        // Converte a data selecionada para o dia da semana correspondente
+        $diaSemana = $diasTraduzidos[$dataCarbon->format('l')];
 
-        $dosesTomadasHoje = MedicationLog::whereIn('medication_id', $medications->pluck('id'))
-            ->whereDate('taken_at', \Carbon\Carbon::today())
+        // Busca doses tomadas na data selecionada
+        $dosesTomadas = MedicationLog::whereIn('medication_id', $medications->pluck('id'))
+            ->whereDate('taken_at', $dataCarbon)
             ->get()
             ->groupBy('medication_id');
 
         foreach ($medications as $medication) {
-            
-            // Se o remédio tiver dias específicos e hoje não for um deles, pula
-            if (!empty($medication->days_of_week) && !in_array($hojeEmPortugues, $medication->days_of_week)) {
+            if (!empty($medication->days_of_week) && !in_array($diaSemana, $medication->days_of_week)) {
                 continue;
             }
 
-            $doses = $medication->getNextDoses();
-            $logsDoRemedio = $dosesTomadasHoje->get($medication->id, collect());
+            $doses = $medication->getNextDoses($dataSelecionada); // Passando a data do filtro
+            if ($medication->daily_limit && count($doses) > $medication->daily_limit) {
+                $doses = array_slice($doses, 0, $medication->daily_limit);
+            }
+            $logsDoRemedio = $dosesTomadas->get($medication->id, collect());
 
             foreach ($doses as $hora) {
                 $jaTomado = $logsDoRemedio->contains('scheduled_time', $hora);
@@ -140,9 +147,8 @@ class MedicationController extends Controller
                     'name' => $medication->name,
                     'dosage' => $medication->dosage,
                     'hora' => $hora,
-                    'ja_passou' => \Carbon\Carbon::createFromFormat('H:i', $hora)->isBefore(now()),
+                    'ja_passou' => $dataCarbon->isToday() ? \Carbon\Carbon::createFromFormat('H:i', $hora)->isBefore(now()) : $dataCarbon->isPast(),
                     'ja_tomado' => $jaTomado,
-                    // Passamos os dias salvos para usar na View se necessário
                     'days_of_week' => $medication->days_of_week, 
                 ];
             }
@@ -152,63 +158,65 @@ class MedicationController extends Controller
             return strcmp($a['hora'], $b['hora']);
         });
 
-        return view('medications.agenda', compact('agendaDoDia'));
+        // Gera link assinado mantendo a data
+        $doctorLink = URL::signedRoute('doctor.view', [
+            'user' => $user->id,
+            'date' => $dataSelecionada
+        ]);
+
+        return view('medications.agenda', compact('agendaDoDia', 'doctorLink', 'dataSelecionada'));
     }
 
-    /**
-     * Registra que o medicamento foi tomado.
-     */
     public function takeDose(Request $request)
     {
         $request->validate([
             'medication_id' => 'required|exists:medications,id',
             'scheduled_time' => 'required|string',
+            'date' => 'required|date', // Valida a data vinda do form
         ]);
 
-        // Segurança: Garante que o medicamento realmente pertence ao usuário logado
         $medication = auth()->user()->medications()->findOrFail($request->medication_id);
+        $dataSelecionada = $request->date;
 
-        // Evita duplicar o registro caso o usuário clique duas vezes rápido
         $jaExiste = MedicationLog::where('medication_id', $medication->id)
             ->where('scheduled_time', $request->scheduled_time)
-            ->whereDate('taken_at', Carbon::today())
+            ->whereDate('taken_at', $dataSelecionada) // Usa a data do formulário
             ->exists();
 
         if (!$jaExiste) {
             MedicationLog::create([
                 'medication_id' => $medication->id,
                 'scheduled_time' => $request->scheduled_time,
-                'taken_at' => now(),
+                'taken_at' => $dataSelecionada . ' ' . now()->format('H:i:s'), // Salva com a data correta
             ]);
         }
 
-        return redirect()->route('medications.agenda')->with('success', 'Dose registrada com sucesso!');
+        // Redireciona de volta para a mesma data
+        return redirect()->route('medications.agenda', ['date' => $dataSelecionada])
+                        ->with('success', 'Dose registrada!');
     }
 
-    /**
-     * 🔄 Remove o registro da dose caso o usuário tenha clicado sem querer.
-     */
     public function undo(Request $request)
     {
         $request->validate([
             'medication_id' => 'required|exists:medications,id',
             'scheduled_time' => 'required|string',
+            'date' => 'required|date',
         ]);
 
-        // Segurança: Valida se o medicamento realmente pertence ao usuário ativo
         $medication = auth()->user()->medications()->findOrFail($request->medication_id);
+        $dataSelecionada = $request->date;
 
-        // Encontra o log gerado hoje para este medicamento e horário específico
         $log = MedicationLog::where('medication_id', $medication->id)
             ->where('scheduled_time', $request->scheduled_time)
-            ->whereDate('taken_at', Carbon::today())
+            ->whereDate('taken_at', $dataSelecionada) // Usa a data do formulário
             ->first();
 
         if ($log) {
             $log->delete();
-            return redirect()->route('medications.agenda')->with('success', 'Registro de dose desfeito!');
         }
 
-        return redirect()->route('medications.agenda')->with('error', 'Não foi possível encontrar o registro desta dose.');
+        return redirect()->route('medications.agenda', ['date' => $dataSelecionada])
+                        ->with('success', 'Registro desfeito!');
     }
 }

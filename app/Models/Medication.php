@@ -32,14 +32,18 @@ class Medication extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Calcula as próximas doses do medicamento para as próximas 24 horas.
+     /**
+     * Calcula as doses do medicamento para uma data específica.
+     * @param string|null $data A data no formato 'Y-m-d'
      */
-    public function getNextDoses(): array
+    public function getNextDoses(?string $data = null): array
     {
         $doses = [];
         
-        // Tenta ler com segundos (padrão vindo do MySQL), se falhar lê sem segundos (padrão vindo de inputs/testes)
+        // 1. Define a data base: usa a fornecida ou hoje se for nulo
+        $dataBase = $data ? Carbon::parse($data) : Carbon::today();
+
+        // 2. Tenta ler o horário inicial
         try {
             $startTime = Carbon::createFromFormat('H:i:s', $this->start_time);
         } catch (\ArgumentsCountError|\Exception $e) {
@@ -48,18 +52,18 @@ class Medication extends Model
 
         $interval = $this->interval_hours;
 
-        // Alinha o primeiro horário para o início do dia atual
-        $currentDose = Carbon::today()->setHour($startTime->hour)->setMinute($startTime->minute);
+        // 3. Define o ponto de partida no dia correto (setando a hora do início do remédio)
+        $currentDose = $dataBase->copy()->setHour($startTime->hour)->setMinute($startTime->minute);
 
-        // Retrocede o horário caso o início do remédio pertença ao ciclo de 24h anteriores
-        while ($currentDose->copy()->subHours($interval)->isToday()) {
-            $currentDose->subHours($interval);
-        }
+        // 4. Gera as doses enquanto estiverem dentro do mesmo dia
+        // Se o daily_limit existir, respeita ele; caso contrário, vai até o fim do dia
+        $contador = 0;
+        $limite = $this->daily_limit ?? 24; // Se não tiver limite, assume o dia todo
 
-        // Gera todas as doses que se encaixam no dia de hoje
-        while ($currentDose->isToday()) {
+        while ($currentDose->isSameDay($dataBase) && $contador < $limite) {
             $doses[] = $currentDose->format('H:i');
             $currentDose->addHours($interval);
+            $contador++;
         }
 
         return $doses;
