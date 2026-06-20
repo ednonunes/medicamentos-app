@@ -1,3 +1,13 @@
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="space-y-4">
     {{-- Atalhos Rápidos --}}
     <div class="flex flex-wrap gap-2 mb-4">
@@ -30,7 +40,7 @@
     <div>
         <label class="block text-sm font-medium text-gray-700">Fotos (máx 3)</label>
         <input type="file" name="photos[]" multiple accept="image/*" id="photo-input"
-            class="mt-1 block w-full text-sm text-gray-500">
+            class="mt-1 block w-full text-sm text-gray-500" >
         <small class="text-gray-500" id="info-fotos">Pode adicionar <span id="slots-restantes">3</span> fotos.</small>
     </div>
 

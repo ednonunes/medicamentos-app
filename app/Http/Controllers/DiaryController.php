@@ -14,11 +14,10 @@ class DiaryController extends Controller
         $query = auth()->user()->diaries()->latest('entry_datetime');
 
         if ($request->has('categorias')) {
-            $categorias = $request->input('categorias'); // Recebe um array
+            $categorias = $request->input('categorias');
             
             $query->where(function($q) use ($categorias) {
                 foreach ($categorias as $cat) {
-                    // Filtra registos que contêm pelo menos uma das categorias selecionadas
                     $q->orWhere('content', 'like', '%' . $cat . '%');
                 }
             });
@@ -34,11 +33,22 @@ class DiaryController extends Controller
     }
 
     public function store(Request $request) {
+        
+        // LOG DE SEGURANÇA
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $key => $file) {
+                \Log::info("Foto $key: " . ($file->isValid() ? 'Válida' : 'Inválida'));
+                \Log::info("Tamanho: " . ($file->getSize() / 1024) . " KB");
+            }
+        } else {
+            \Log::info("Nenhum arquivo enviado.");
+        }
+
         $data = $request->validate([
             'entry_datetime' => 'required',
             'content' => 'required',
-            'photos' => 'nullable|array|max:3', // Garante no máximo 3 itens no array
-            'photos.*' => 'image|max:2048'      // Valida cada foto individualmente
+            'photos' => 'nullable', // Validação flexível para o array ou arquivo único
+            'photos.*' => 'image|max:5120'
         ]);
 
         $data['photos'] = $this->handlePhotos($request);
@@ -55,20 +65,15 @@ class DiaryController extends Controller
         $data = $request->validate([
             'entry_datetime' => 'required',
             'content' => 'required',
-            'photos.*' => 'nullable|image|max:2048'
+            'photos.*' => 'nullable|image|max:5120'
         ]);
 
-        // 1. Recupera as fotos atuais (garante que é um array, mesmo se estiver vazio)
         $currentPhotos = $diary->photos ?? [];
 
-        // 2. Se houver novas fotos, processa e mescla com as existentes
         if ($request->hasFile('photos')) {
             $newPhotos = $this->handlePhotos($request);
-            
-            // Mescla o array antigo com o novo
             $data['photos'] = array_merge($currentPhotos, $newPhotos);
         } else {
-            // Se não houver novas fotos, mantém as que já existiam
             $data['photos'] = $currentPhotos;
         }
 
@@ -76,12 +81,21 @@ class DiaryController extends Controller
         return redirect()->route('diaries.index')->with('success', 'Atualizado!');
     }
 
-    // Método auxiliar para não repetir código
     private function handlePhotos(Request $request) {
         $paths = [];
+        
         if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $file) {
-                $paths[] = $file->store('diaries', 'public');
+            $files = $request->file('photos');
+            
+            // Garante que seja um array, mesmo se o celular enviar um arquivo único
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+                if ($file && $file->isValid()) {
+                    $paths[] = $file->store('diaries', 'public');
+                }
             }
         }
         return $paths;
@@ -91,14 +105,13 @@ class DiaryController extends Controller
     {
         $photos = $diary->photos;
 
-
         if (isset($photos[$index])) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($photos[$index]);
             unset($photos[$index]);
             $diary->photos = array_values($photos);
             $diary->save();
             
-            return response()->json(['success' => true]); // AJAX precisa disso
+            return response()->json(['success' => true]);
         }
 
         return response()->json(['success' => false], 404);
@@ -106,7 +119,6 @@ class DiaryController extends Controller
 
     public function exportPDF(Request $request)
     {
-        // Pega os mesmos filtros usados na listagem
         $query = auth()->user()->diaries()->latest('entry_datetime');
 
         if ($request->has('categorias')) {
@@ -119,8 +131,6 @@ class DiaryController extends Controller
         }
 
         $diaries = $query->get();
-
-        // Carrega a view do PDF
         $pdf = Pdf::loadView('diaries.pdf', compact('diaries'));
 
         return $pdf->stream('relatorio_diario_saude.pdf');
@@ -128,18 +138,14 @@ class DiaryController extends Controller
 
     public function destroy(Diary $diary)
     {
-        // 1. Verifica se existem fotos vinculadas a este registro
         if ($diary->photos && is_array($diary->photos)) {
             foreach ($diary->photos as $photo) {
-                // Remove o arquivo físico da foto dentro do disco público
                 Storage::disk('public')->delete($photo);
             }
         }
 
-        // 2. Apaga o registro do diário do banco de dados
         $diary->delete();
 
-        // 3. Redireciona o usuário com uma mensagem de sucesso
         return redirect()->route('diaries.index')->with('success', 'Registro excluído com sucesso!');
     }
 }

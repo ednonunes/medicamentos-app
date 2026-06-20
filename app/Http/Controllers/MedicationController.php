@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\MedicationLog;
-use Illuminate\Support\Facades\URL;
 
 class MedicationController extends Controller
 {
@@ -162,10 +161,8 @@ class MedicationController extends Controller
         });
 
         // Gera link assinado mantendo a data
-        $doctorLink = URL::signedRoute('doctor.view', [
-            'user' => $user->id,
-            'date' => $dataSelecionada
-        ]);
+        $doctorLink = route('doctor.view', ['user' => auth()->user()->uuid]);
+        
 
         return view('medications.agenda', compact('agendaDoDia', 'doctorLink', 'dataSelecionada'));
     }
