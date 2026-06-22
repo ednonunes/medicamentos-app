@@ -86,7 +86,7 @@ Schedule::call(function () {
     foreach ($agrupamento as $userData) {
 
         $primeiroNome = explode(' ', trim($userData['name']))[0];
-        $texto = "⚠️ *Lembrete Dose em Dia* ⚠️\n\n";        
+        $texto = "⚠️ *Lembrete Dose em Dia* \n\n";        
         $texto .= "Olá, *{$primeiroNome}*! Está na hora dos seus medicamentos:\n\n";
 
         foreach ($userData['items'] as $item) {
@@ -115,4 +115,4 @@ Schedule::call(function () {
             Log::error("❌ Erro de conexão com Z-API: " . $e->getMessage());
         }
     }
-})->everyFiveSeconds();
+})->everyMinute();

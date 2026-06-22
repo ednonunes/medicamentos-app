@@ -27,6 +27,8 @@ class MedicationController extends Controller
     // Recebe os dados do formulário e grava no banco 
     public function store(Request $request)
     {
+        $this->validatePhotos($request);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'dosage' => 'required|string|max:255',
@@ -57,6 +59,8 @@ class MedicationController extends Controller
     {
         $this->authorize('update', $medication);
 
+        $this->validatePhotos($request);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'dosage' => 'required|string|max:255',
@@ -85,7 +89,10 @@ class MedicationController extends Controller
     // Remove o medicamento do banco de dados
     public function destroy(Medication $medication)
     {
-        $medication = Auth::user()->medications()->findOrFail($medication->id);
+        // Segurança extra: Garante que o medicamento realmente pertence ao usuário logado
+        if ($medication->user_id !== Auth::id()) {
+            abort(403, 'Ação não autorizada.');
+        }
 
         // Deleta o registro do banco de dados
         $medication->delete();
@@ -212,4 +219,17 @@ class MedicationController extends Controller
         return response()->json(['success' => true, 'message' => 'Registro desfeito!']);
     }
 
+    /**
+     * Validação centralizada para fotos (pode ser usada em store/update)
+     */
+    private function validatePhotos(Request $request)
+    {
+        $request->validate([
+            'photos' => 'nullable|array',
+            'photos.*' => 'image|mimes:jpeg,png,jpg,heic|max:2048',
+        ], [
+            'photos.*.max' => 'Uma das fotos selecionadas é muito grande. O limite máximo é 2MB por foto.',
+            'photos.*.image' => 'O arquivo enviado não é uma imagem válida.',
+        ]);
+    }
 }

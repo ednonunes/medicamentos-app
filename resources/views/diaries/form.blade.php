@@ -1,10 +1,15 @@
 @if ($errors->any())
-    <div class="alert alert-danger">
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+    <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
+        <div class="flex">
+            <div class="ml-3">
+                <h3 class="text-sm font-bold text-red-800">Ops! Corrija os erros abaixo:</h3>
+                <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
     </div>
 @endif
 
@@ -41,7 +46,10 @@
         <label class="block text-sm font-medium text-gray-700">Fotos (máx 3)</label>
         <input type="file" name="photos[]" multiple accept="image/*" id="photo-input"
             class="mt-1 block w-full text-sm text-gray-500" >
-        <small class="text-gray-500" id="info-fotos">Pode adicionar <span id="slots-restantes">3</span> fotos.</small>
+        
+        <small class="text-gray-500" id="info-fotos">
+            Pode adicionar <span id="slots-restantes">3</span> fotos. <br>
+            Tamanho máximo por foto: <strong>2MB</strong>.</small>
     </div>
 
     {{-- Bloco de Fotos na Edição --}}
@@ -147,5 +155,53 @@
             console.error('Erro:', error);
             alert('Falha na conexão.');
         }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"][name="photos[]"]');
+        const MAX_SIZE_MB = 2; // Ajuste para o mesmo valor do seu servidor
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const files = this.files;
+                let errorFound = false;
+
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].size > MAX_SIZE_MB * 1024 * 1024) {
+                        // Chama o modal em vez do alert
+                        exibirAvisoErro(
+                            'Foto muito grande!', 
+                            `A foto "${files[i].name}" excede o limite de ${MAX_SIZE_MB}MB e não será processada. Selecione uma imagem menor.`
+                        );
+                        this.value = ''; // Limpa o campo
+                        errorFound = true;
+                        break;
+                    }
+                }
+            });
+        }
+    });
+
+    // Nova função para disparar o seu componente x-confirm-modal
+    function exibirAvisoErro(titulo, mensagem) {
+        const modal = document.getElementById('global-confirm-modal');
+        const titleEl = document.getElementById('modal-title');
+        const msgEl = document.getElementById('modal-message');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+
+        titleEl.innerText = titulo;
+        msgEl.innerText = mensagem;
+        
+        // Esconde o botão de confirmar, pois é apenas um aviso
+        confirmBtn.classList.add('hidden');
+        cancelBtn.innerText = 'Entendido';
+
+        modal.classList.remove('hidden');
+
+        cancelBtn.onclick = () => {
+            modal.classList.add('hidden');
+            confirmBtn.classList.remove('hidden'); // Restaura para outros usos
+        };
     }
 </script>
