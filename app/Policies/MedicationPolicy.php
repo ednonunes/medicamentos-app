@@ -13,6 +13,6 @@ class MedicationPolicy
     public function update(User $user, Medication $medication): bool
     {
         // Retorna TRUE apenas se o medicamento pertencer ao usuário logado
-        return $user->id === $medication->user_id;
+        return (int)$user->id === (int)$medication->user_id;
     }
 }

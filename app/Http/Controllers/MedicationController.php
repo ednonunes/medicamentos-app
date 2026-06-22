@@ -47,10 +47,8 @@ class MedicationController extends Controller
     // Busca o medicamento para exibir no formulário de edição
     public function edit(Medication $medication)
     {
-        // Trava de segurança contra manipulação de URL
-        if ($medication->user_id !== Auth::id()) {
-            abort(403, 'Ação não autorizada.');
-        }
+        // No seu Controller, substitua a busca manual pela busca via relação:
+        $medication = Auth::user()->medications()->findOrFail($medication->id);
 
         return view('medications.edit', compact('medication'));
     }
@@ -87,10 +85,7 @@ class MedicationController extends Controller
     // Remove o medicamento do banco de dados
     public function destroy(Medication $medication)
     {
-        // Segurança extra: Garante que o medicamento realmente pertence ao usuário logado
-        if ($medication->user_id !== Auth::id()) {
-            abort(403, 'Ação não autorizada.');
-        }
+        $medication = Auth::user()->medications()->findOrFail($medication->id);
 
         // Deleta o registro do banco de dados
         $medication->delete();

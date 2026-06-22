@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 Schedule::call(function () {
+    
     $agora = Carbon::now('America/Sao_Paulo')->startOfMinute();
     $dataHoje = $agora->format('Y-m-d');
     $diaDaSemanaAtual = ucfirst($agora->locale('pt_BR')->dayName);
@@ -106,7 +107,7 @@ Schedule::call(function () {
             ]);
 
             if ($resposta->successful()) {
-                // Log::info("✅ Notificação enviada para {$userData['name']}");
+                //Log::info("✅ Notificação enviada para {$userData['name']}");
             } else {
                 Log::error("❌ Erro na Z-API: " . $resposta->body());
             }
@@ -114,4 +115,4 @@ Schedule::call(function () {
             Log::error("❌ Erro de conexão com Z-API: " . $e->getMessage());
         }
     }
-})->everyMinute();
+})->everyFiveSeconds();
