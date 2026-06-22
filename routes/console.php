@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Services\NotificationService;
 
 Schedule::call(function () {
     
@@ -113,6 +114,32 @@ Schedule::call(function () {
             }
         } catch (\Exception $e) {
             Log::error("❌ Erro de conexão com Z-API: " . $e->getMessage());
+        }
+
+        // --- 2. Envio Push OneSignal: ---
+        try {
+            // Usamos o ID do usuário para garantir que a notificação vá apenas para o dono
+            // Se o usuário estiver logado no navegador, o OneSignal identifica pelo ID
+            $client = new \GuzzleHttp\Client();
+            $client->post('https://onesignal.com/api/v1/notifications', [
+                'headers' => [
+                    'Authorization' => 'Basic ' . env('ONESIGNAL_REST_API_KEY'),
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'app_id' => env('ONESIGNAL_APP_ID'),
+                    'headings' => ['en' => '💊 Lembrete de Medicamento'],
+                    'contents' => ['en' => "Olá, {$primeiroNome}! É hora de tomar seus remédios."],
+                    // Aqui filtramos pelo ID do usuário (recomendo configurar no SDK web: OneSignal.setExternalUserId(userId))
+                    'filters' => [
+                        ['field' => 'tag', 'key' => 'user_id', 'relation' => '=', 'value' => (string)$userData['user_id']]
+                    ]
+                ]
+            ]);
+            
+            Log::info("✅ Notificação Push enviada para usuário ID: {$userData['user_id']}");
+        } catch (\Exception $e) {
+            Log::error("❌ Erro OneSignal: " . $e->getMessage());
         }
     }
 })->everyMinute();

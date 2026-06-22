@@ -13,6 +13,23 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <!-- push notification -->
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script>
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(function(OneSignal) {
+            OneSignal.init({
+                appId: "{{ env('ONESIGNAL_APP_ID') }}",
+            });
+
+            // Se o usuário estiver logado, vinculamos o ID dele
+            @auth
+                OneSignal.login("{{ auth()->id() }}");
+                OneSignal.User.addTag("user_id", "{{ auth()->id() }}");
+            @endauth
+        });
+        </script>
         
     </head>
     </head>
