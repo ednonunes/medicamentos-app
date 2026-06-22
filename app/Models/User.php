@@ -9,14 +9,26 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-#[Fillable(['name', 'email', 'password', 'phone'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'uuid'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
 
-    use HasFactory, Notifiable, HasUuids;
+    use HasFactory, Notifiable;
+    // Mantenha como int para não quebrar chaves estrangeiras
+    public $incrementing = true;
+    protected $keyType = 'int';
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($user) {
+            if (empty($user->uuid)) {
+                $user->uuid = \Illuminate\Support\Str::uuid()->toString();
+            }
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
