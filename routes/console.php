@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use App\Services\NotificationService;
 
 Schedule::call(function () {
     
@@ -78,6 +77,7 @@ Schedule::call(function () {
         if ($jaTomou) continue;
 
         // Adiciona ao agrupador
+        $agrupamento[$medication->user_id]['user_id'] = $medication->user_id;
         $agrupamento[$medication->user_id]['phone'] = $medication->user_phone;
         $agrupamento[$medication->user_id]['name'] = $medication->user_name;
         $agrupamento[$medication->user_id]['items'][] = $medication;
@@ -98,25 +98,31 @@ Schedule::call(function () {
         $texto .= "\n🕒 *Horário:* " . $agora->format('H:i');
         $texto .= "\n\nPor favor, registre no sistema após tomar! 👍";
 
-        // envio
+       // envio whatsapp
+        // --- bloco de envio no console.php ---
         try {
-            $resposta = Http::withHeaders([
-                'Client-Token' => '34FDEF114E95A1BC86380A27' // Token extraído da sua URL
-            ])->post(env('WHATSAPP_API_URL'), [
+            // 1. A URL no .env DEVE estar no formato: 
+            // https://api.z-api.io/instances/SEU_ID_INSTANCIA/token/SEU_TOKEN_INSTANCIA/send-text
+            $url = env('WHATSAPP_API_URL');
+
+            // 2. Fazemos o POST direto, sem cabeçalhos de autenticação, 
+            // pois a autenticação já está na URL.
+            $resposta = Http::post($url, [
                 'phone' => '55' . $userData['phone'],
                 'message' => $texto
             ]);
 
             if ($resposta->successful()) {
-                //Log::info("✅ Notificação enviada para {$userData['name']}");
+                Log::info("✅ WhatsApp enviado com sucesso para {$userData['name']}");
             } else {
-                Log::error("❌ Erro na Z-API: " . $resposta->body());
+                // Log detalhado para diagnóstico
+                Log::error("❌ Erro Z-API (Status: " . $resposta->status() . "): " . $resposta->body());
             }
         } catch (\Exception $e) {
             Log::error("❌ Erro de conexão com Z-API: " . $e->getMessage());
         }
-
-        // --- 2. Envio Push OneSignal: ---
+        
+        // envia push notification:
         try {
             // Usamos o ID do usuário para garantir que a notificação vá apenas para o dono
             // Se o usuário estiver logado no navegador, o OneSignal identifica pelo ID

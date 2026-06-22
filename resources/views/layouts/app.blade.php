@@ -12,22 +12,21 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite([
+            'resources/css/app.css', 
+            'resources/js/app.js'
+        ])
 
         <!-- push notification -->
         <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
         <script>
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            OneSignalDeferred.push(function(OneSignal) {
-            OneSignal.init({
-                appId: "{{ env('ONESIGNAL_APP_ID') }}",
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+            appId: "{{ env('ONESIGNAL_APP_ID') }}",
+            serviceWorkerPath: "public/OneSignalSDKWorker.js",
+            serviceWorkerParam: { scope: "/push/onesignal/" },
             });
-
-            // Se o usuário estiver logado, vinculamos o ID dele
-            @auth
-                OneSignal.login("{{ auth()->id() }}");
-                OneSignal.User.addTag("user_id", "{{ auth()->id() }}");
-            @endauth
         });
         </script>
         
