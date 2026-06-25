@@ -49,6 +49,35 @@
                 </div>
             </div>
 
+            {{-- gráfico da urina --}}
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-slate-800 mb-6">Total de Urina por Dia (ml)</h3>
+                <canvas id="urinaChart" height="80"></canvas>
+            </div>
+
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('urinaChart').getContext('2d');
+        const urinaChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($dadosUrina->pluck('data')) !!},
+                datasets: [{
+                    label: 'Volume (ml)',
+                    data: {!! json_encode($dadosUrina->pluck('valor')) !!},
+                    borderColor: '#10b981', // Cor Emerald-500
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } }
+            }
+        });
+    </script>
 </x-app-layout>
