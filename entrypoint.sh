@@ -1,18 +1,19 @@
 #!/bin/sh
+set -e
 
-# Se a variável PORT existir (Railway), roda o servidor embutido do PHP
+# Executa as migrações sempre no deploy
+echo "Executando migrações do banco de dados..."
+php /var/www/artisan migrate --force
+
+# Cria o link do storage
+echo "Criando link do storage..."
+php /var/www/artisan storage:link --force
+
+# Verifica se existe a variável PORT para iniciar o servidor interno ou o PHP-FPM
 if [ -n "$PORT" ]; then
-    echo "Ambiente de Produção (Railway) detectado!"
-    
-    # Roda as migrations
-    php artisan migrate --force
-    
-    # CRITICAL FIX: Garante que o link do storage seja criado no deploy
-    php artisan storage:link --force
-    
-    exec php -S 0.0.0.0:$PORT -t public
+    echo "Iniciando servidor PHP na porta $PORT..."
+    exec php -S 0.0.0.0:$PORT -t /var/www/public
 else
-    # Se não houver PORT (Ambiente Local), roda o PHP-FPM padrão para o Nginx
-    echo "Ambiente de Desenvolvimento Local detectado!"
+    echo "Iniciando PHP-FPM padrão..."
     exec php-fpm
 fi
