@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile
     image: medicamentos-app-img
     container_name: medicamentos-app
-    restart: unless-stopped
     # Removido 'user: "${UID}:${GID}"' para evitar conflitos de permissão no deploy
     volumes:
       - ./:/var/www
@@ -15,7 +14,6 @@ services:
   web:
     image: nginx:alpine
     container_name: medicamentos-web
-    restart: unless-stopped
     ports:
       - "8000:80"
     volumes:
@@ -29,7 +27,6 @@ services:
   db:
     image: mysql:8.0
     container_name: medicamentos-db
-    restart: unless-stopped
     ports:
       - "3306:3306"
     environment:
