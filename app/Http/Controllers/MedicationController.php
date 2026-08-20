@@ -13,7 +13,6 @@ class MedicationController extends Controller
     // Listagem dos medicamentos
     public function index()
     {
-        // Substituímos o ->medications por uma consulta com paginação (10 por página)
         $medications = Auth::user()->medications()->paginate(10);
         
         return view('medications.index', compact('medications'));
@@ -24,54 +23,83 @@ class MedicationController extends Controller
         return view('medications.create');
     }
     
-    // Recebe os dados do formulário e grava no banco 
     public function store(Request $request)
     {
-        $this->validatePhotos($request);
+        try {
+            $this->validatePhotos($request);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'dosage' => 'required|string|max:255',
-            'interval_hours' => 'required|integer|min:1|max:24',
-            'start_time' => 'required|date_format:H:i',
-            'days_of_week' => 'nullable|array', 
-            'days_of_week.*' => 'string',
-            'observations' => 'nullable|string',
-            'take_on_empty_stomach' => 'boolean', 
-            'daily_limit' => 'nullable|integer|min:1',
-        ]);
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'dosage' => 'required|string|max:255',
+                'interval_hours' => 'nullable|integer|min:1|max:24',
+                'start_time' => 'required|date_format:H:i',
+                'days_of_week' => 'nullable|array', 
+                'days_of_week.*' => 'string',
+                'observations' => 'nullable|string',
+                'take_on_empty_stomach' => 'boolean', 
+                'daily_limit' => 'nullable|integer|min:1',
+            ], [
+                'interval_hours.required' => 'O campo intervalo (em horas) é obrigatório.',
+            ], [
+                'interval_hours' => 'intervalo em horas',
+                'name' => 'nome do medicamento',
+                'dosage' => 'dosagem',
+                'start_time' => 'hora inicial',
+            ]);
 
-        auth()->user()->medications()->create($validated);
+            // Trata o checkbox de jejum caso venha vazio
+            $validated['take_on_empty_stomach'] = $request->has('take_on_empty_stomach') ? true : false;
 
-        return redirect()->route('medications.index')->with('success', 'Medicamento cadastrado com sucesso!');
+            // Se o usuário desmarcar todos os dias, salva null
+            if (!isset($validated['days_of_week'])) {
+                $validated['days_of_week'] = null;
+            }
+
+            auth()->user()->medications()->create($validated);
+
+            return redirect()->route('medications.index')->with('success', 'Medicamento cadastrado com sucesso!');
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Joga os erros de validação de volta para a tela
+            throw $e;
+        } catch (\Exception $e) {
+            // EXIBE O ERRO REAL NA TELA EM VEZ DE APENas PISCAR
+            dd('Erro capturado: ' . $e->getMessage(), $e->getTraceAsString());
+        }
     }
 
-    // Busca o medicamento para exibir no formulário de edição
     public function edit(Medication $medication)
     {
-        // No seu Controller, substitua a busca manual pela busca via relação:
         $medication = Auth::user()->medications()->findOrFail($medication->id);
 
         return view('medications.edit', compact('medication'));
     }
 
-    public function update(Request $request, Medication $medication)
+    public function update(Request $request, $id)
     {
-        $this->authorize('update', $medication);
+        // Garante de forma segura que o medicamento pertence ao usuário logado
+        $medication = Auth::user()->medications()->findOrFail($id);
 
         $this->validatePhotos($request);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'dosage' => 'required|string|max:255',
-            'interval_hours' => 'required|integer|min:1|max:24',
-            'start_time' => 'required|date_format:H:i',
-            'days_of_week' => 'nullable|array', 
-            'days_of_week.*' => 'string',
-            'observations' => 'nullable|string',
-            'take_on_empty_stomach' => 'boolean', 
-            'daily_limit' => 'nullable|integer|min:1',
-        ]);
+                'name' => 'required|string|max:255',
+                'dosage' => 'required|string|max:255',
+                'interval_hours' => 'nullable|integer|min:1|max:24',
+                'start_time' => 'required|date_format:H:i',
+                'days_of_week' => 'nullable|array', 
+                'days_of_week.*' => 'string',
+                'observations' => 'nullable|string',
+                'take_on_empty_stomach' => 'boolean', 
+                'daily_limit' => 'nullable|integer|min:1',
+            ], [
+                'interval_hours.required' => 'O campo intervalo (em horas) é obrigatório.',
+            ], [
+                'interval_hours' => 'intervalo em horas',
+                'name' => 'nome do medicamento',
+                'dosage' => 'dosagem',
+                'start_time' => 'hora inicial',
+            ]);
 
         // se desmarcar a flag jejjum:
         $validated['take_on_empty_stomach'] = $request->has('take_on_empty_stomach') ? true : false;
@@ -83,21 +111,21 @@ class MedicationController extends Controller
 
         $medication->update($validated);
 
-        return redirect()->route('medications.index')->with('success', 'Medicamento actualizado com sucesso!');
+        return redirect()->route('medications.index')->with('success', 'Medicamento atualizado com sucesso!');
     }
 
-    // Remove o medicamento do banco de dados
-    public function destroy(Medication $medication)
+    // Remove o medicamento do banco de dados com segurança garantida pela relação do usuário
+    public function destroy($id)
     {
-        // Segurança extra: Garante que o medicamento realmente pertence ao usuário logado
-        if ($medication->user_id !== Auth::id()) {
-            abort(403, 'Ação não autorizada.');
-        }
+        // Busca o medicamento estritamente dentro dos registros do usuário logado
+        $medication = Auth::user()->medications()->findOrFail($id);
 
-        // Deleta o registro do banco de dados
+        // Deleta os logs associados ao medicamento primeiro para evitar erros de chave estrangeira (opcional, mas recomendado)
+        $medication->logs()->delete();
+
+        // Deleta o medicamento
         $medication->delete();
 
-        // Redireciona de volta com mensagem de sucesso
         return redirect()->route('medications.index')->with('success', 'Medicamento removido com sucesso!');
     }
 
@@ -106,13 +134,11 @@ class MedicationController extends Controller
         $user = auth()->user();
         $medications = $user->medications;
         
-        // 1. Captura a data selecionada ou usa hoje como padrão
         $dataSelecionada = $request->input('date', now()->format('Y-m-d'));
         $dataCarbon = \Carbon\Carbon::parse($dataSelecionada);
         
         $agendaDoDia = [];
 
-        // Array de tradução
         $diasTraduzidos = [
             'Sunday'    => 'Domingo',
             'Monday'    => 'Segunda-feira',
@@ -123,10 +149,8 @@ class MedicationController extends Controller
             'Saturday'  => 'Sábado',
         ];
 
-        // Converte a data selecionada para o dia da semana correspondente
         $diaSemana = $diasTraduzidos[$dataCarbon->format('l')];
 
-        // Busca doses tomadas na data selecionada
         $dosesTomadas = MedicationLog::whereIn('medication_id', $medications->pluck('id'))
             ->whereDate('taken_at', $dataCarbon)
             ->get()
@@ -137,7 +161,7 @@ class MedicationController extends Controller
                 continue;
             }
 
-            $doses = $medication->getNextDoses($dataSelecionada); // Passando a data do filtro
+            $doses = $medication->getNextDoses($dataSelecionada);
             if ($medication->daily_limit && count($doses) > $medication->daily_limit) {
                 $doses = array_slice($doses, 0, $medication->daily_limit);
             }
@@ -162,10 +186,8 @@ class MedicationController extends Controller
             return strcmp($a['hora'], $b['hora']);
         });
 
-        // Gera link assinado mantendo a data
         $doctorLink = route('doctor.view', ['user' => auth()->user()->uuid]);
         
-
         return view('medications.agenda', compact('agendaDoDia', 'doctorLink', 'dataSelecionada'));
     }
 
@@ -219,9 +241,6 @@ class MedicationController extends Controller
         return response()->json(['success' => true, 'message' => 'Registro desfeito!']);
     }
 
-    /**
-     * Validação centralizada para fotos (pode ser usada em store/update)
-     */
     private function validatePhotos(Request $request)
     {
         $request->validate([

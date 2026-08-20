@@ -1,18 +1,3 @@
-@if ($errors->any())
-    <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
-        <div class="flex">
-            <div class="ml-3">
-                <h3 class="text-sm font-bold text-red-800">Ops! Corrija os erros abaixo:</h3>
-                <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    </div>
-@endif
-
 <div class="space-y-4">
     {{-- Atalhos Rápidos --}}
     <div class="flex flex-wrap gap-2 mb-4">

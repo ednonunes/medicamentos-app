@@ -43,7 +43,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 });
 
 // visualização médica:
-Route::get('/diario-medico/{user:uuid}', [App\Http\Controllers\DoctorViewController::class, 'show'])
+Route::get('/diario-medico/{user:uuid}', [DoctorViewController::class, 'show'])
     ->name('doctor.view');
 
 require __DIR__.'/auth.php';

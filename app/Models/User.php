@@ -45,7 +45,7 @@ class User extends Authenticatable
 
     public function medications(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(Medication::class);
+        return $this->hasMany(Medication::class)->orderBy('name');
     }
 
     /**

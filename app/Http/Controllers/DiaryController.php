@@ -6,12 +6,30 @@ use App\Models\Diary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class DiaryController extends Controller
 {
     public function index(Request $request) 
     {
         $query = auth()->user()->diaries()->latest('entry_datetime');
+
+        if (!$request->hasAny(['categorias', 'data_inicio', 'data_fim'])) {
+            $dataInicio = Carbon::today()->format('Y-m-d');
+            $dataFim = Carbon::today()->format('Y-m-d');
+            $query->whereDate('entry_datetime', $dataInicio);
+        } else {
+            $dataInicio = $request->input('data_inicio');
+            $dataFim = $request->input('data_fim');
+
+            if ($dataInicio && !$dataFim) {
+                $query->whereDate('entry_datetime', $dataInicio);
+            } elseif ($dataInicio && $dataFim) {
+                $query->whereBetween('entry_datetime', [$dataInicio . ' 00:00:00', $dataFim . ' 23:59:59']);
+            } elseif (!$dataInicio && $dataFim) {
+                $query->whereDate('entry_datetime', '<=', $dataFim);
+            }
+        }
 
         if ($request->has('categorias')) {
             $categorias = $request->input('categorias');
@@ -25,7 +43,7 @@ class DiaryController extends Controller
 
         $diaries = $query->get();
         
-        return view('diaries.index', compact('diaries'));
+        return view('diaries.index', compact('diaries', 'dataInicio', 'dataFim'));
     }
 
     public function create() {
@@ -33,21 +51,10 @@ class DiaryController extends Controller
     }
 
     public function store(Request $request) {
-        
-        // LOG DE SEGURANÇA
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $key => $file) {
-                \Log::info("Foto $key: " . ($file->isValid() ? 'Válida' : 'Inválida'));
-                \Log::info("Tamanho: " . ($file->getSize() / 1024) . " KB");
-            }
-        } else {
-            \Log::info("Nenhum arquivo enviado.");
-        }
-
         $data = $request->validate([
             'entry_datetime' => 'required',
             'content' => 'required',
-            'photos' => 'nullable', // Validação flexível para o array ou arquivo único
+            'photos' => 'nullable', 
             'photos.*' => 'image|max:5120'
         ]);
 
@@ -87,7 +94,6 @@ class DiaryController extends Controller
         if ($request->hasFile('photos')) {
             $files = $request->file('photos');
             
-            // Garante que seja um array, mesmo se o celular enviar um arquivo único
             if (!is_array($files)) {
                 $files = [$files];
             }
@@ -121,6 +127,24 @@ class DiaryController extends Controller
     {
         $query = auth()->user()->diaries()->latest('entry_datetime');
 
+        $dataInicio = $request->input('data_inicio');
+        $dataFim = $request->input('data_fim');
+
+        // Se nenhum filtro de data foi passado na rota de exportação, assume o dia de hoje por segurança
+        if (!$dataInicio && !$dataFim && !$request->has('categorias')) {
+            $dataInicio = Carbon::today()->format('Y-m-d');
+            $dataFim = Carbon::today()->format('Y-m-d');
+            $query->whereDate('entry_datetime', $dataInicio);
+        } else {
+            if ($dataInicio && !$dataFim) {
+                $query->whereDate('entry_datetime', $dataInicio);
+            } elseif ($dataInicio && $dataFim) {
+                $query->whereBetween('entry_datetime', [$dataInicio . ' 00:00:00', $dataFim . ' 23:59:59']);
+            } elseif (!$dataInicio && $dataFim) {
+                $query->whereDate('entry_datetime', '<=', $dataFim);
+            }
+        }
+
         if ($request->has('categorias')) {
             $categorias = $request->input('categorias');
             $query->where(function($q) use ($categorias) {
@@ -131,7 +155,9 @@ class DiaryController extends Controller
         }
 
         $diaries = $query->get();
-        $pdf = Pdf::loadView('diaries.pdf', compact('diaries'));
+        
+        // Passamos também os filtros para exibir no cabeçalho do PDF
+        $pdf = Pdf::loadView('diaries.pdf', compact('diaries', 'dataInicio', 'dataFim'));
 
         return $pdf->stream('relatorio_diario_saude.pdf');
     }
