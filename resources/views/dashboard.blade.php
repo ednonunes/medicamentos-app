@@ -39,6 +39,7 @@
                 <div class="p-6 text-gray-700 leading-relaxed space-y-3">
                     <p class="font-medium text-slate-800">
                         Este é seu painel para cadastro de medicamentos e horários, bem como a visualização de sua agenda, basta navegar pelo menu e começar.
+                        <b>Permita notificações para uma melhor experiência</b> e não perder nenhum horário de medicação.
                     </p>
                     <p class="text-sm text-gray-500">
                         Cadastre uma medicação com um horário próximo, verifique se cadastrou seu número de <span class="font-semibold text-emerald-600">WhatsApp</span> e aguarde o recebimento do alerta. Depois basta acessar sua agenda e marcar o mesmo como <span class="italic font-medium">"já tomado"</span>.

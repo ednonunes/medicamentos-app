@@ -9,7 +9,7 @@ class NotificationService
     public static function send($title, $message)
     {
         // 1. Lógica do WhatsApp (a que você já tem funcionando)
-        \Log::info("Enviando WhatsApp..."); 
+        \Log::info("Enviando via One Signal..."); 
         
         // 2. Lógica do OneSignal
         $client = new Client();

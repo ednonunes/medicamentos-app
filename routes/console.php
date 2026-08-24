@@ -127,7 +127,7 @@ Schedule::call(function () {
             // Usamos o ID do usuário para garantir que a notificação vá apenas para o dono
             // Se o usuário estiver logado no navegador, o OneSignal identifica pelo ID
             $client = new \GuzzleHttp\Client();
-            $client->post('https://onesignal.com/api/v1/notifications', [
+            $response = $client->post('https://onesignal.com/api/v1/notifications', [
                 'headers' => [
                     'Authorization' => 'Basic ' . env('ONESIGNAL_REST_API_KEY'),
                     'Content-Type' => 'application/json',
@@ -143,7 +143,7 @@ Schedule::call(function () {
                 ]
             ]);
             
-            Log::info("✅ Notificação Push enviada para usuário ID: {$userData['user_id']}");
+            Log::info("✅ Notificação Push enviada para usuário ID: {$userData['user_id']}" . ' RESPONSE => ' .$response->getBody()->getContents());
         } catch (\Exception $e) {
             Log::error("❌ Erro OneSignal: " . $e->getMessage());
         }
