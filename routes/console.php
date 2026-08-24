@@ -100,6 +100,7 @@ Schedule::call(function () {
 
        // envio whatsapp
         // --- bloco de envio no console.php ---
+        /* #removido envio whatasapp
         try {
             // 1. A URL no .env DEVE estar no formato: 
             // https://api.z-api.io/instances/SEU_ID_INSTANCIA/token/SEU_TOKEN_INSTANCIA/send-text
@@ -118,9 +119,9 @@ Schedule::call(function () {
                 // Log detalhado para diagnóstico
                 Log::error("❌ Erro Z-API (Status: " . $resposta->status() . "): " . $resposta->body());
             }
-        } catch (\Exception $e) {
-            Log::error("❌ Erro de conexão com Z-API: " . $e->getMessage());
-        }
+            } catch (\Exception $e) {
+                Log::error("❌ Erro de conexão com Z-API: " . $e->getMessage());            
+        }*/ #removido envio whatasapp
         
         // envia push notification:
         try {

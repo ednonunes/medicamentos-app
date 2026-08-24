@@ -30,6 +30,20 @@
 
             // Força a exibição do convite deslizante imediatamente
             OneSignal.Slidedown.promptPush({ force: true });
+
+            @auth
+                OneSignal.login("{{ auth()->user()->id }}");
+            @endauth
+
+            // Retorna o ID vinculado (ex: "2")
+            console.log("External ID vinculado:", OneSignal.User.externalId);
+
+            // Retorna o ID do dispositivo se o usuário aceitou o convite
+            console.log("ID do Dispositivo:", OneSignal.User.PushSubscription.id);
+
+            // Retorna true se ele estiver inscrito e pronto para receber notificações
+            console.log("Está inscrito?", OneSignal.User.PushSubscription.optedIn);
+
         });
         </script>
         
