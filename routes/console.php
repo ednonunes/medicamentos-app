@@ -87,15 +87,15 @@ Schedule::call(function () {
     foreach ($agrupamento as $userData) {
 
         $primeiroNome = explode(' ', trim($userData['name']))[0];
-        $texto = "⚠️ *Lembrete Dose em Dia* \n\n";        
-        $texto .= "Olá, *{$primeiroNome}*! Está na hora dos seus medicamentos:\n\n";
+        $texto = "⚠️ Lembrete de medicação \n\n";        
+        $texto .= "Olá, {$primeiroNome}! Está na hora dos seus medicamentos:\n\n";
 
         foreach ($userData['items'] as $item) {
-            $texto .= "💊 *{$item->medication_name}* ({$item->medication_dosage})\n";
-            if ($item->take_on_empty_stomach) $texto .= "   └ 🍏 *Jejum*\n";
+            $texto .= "💊 {$item->medication_name} ({$item->medication_dosage})\n";
+            if ($item->take_on_empty_stomach) $texto .= "   └ 🍏 *Jejum\n";
         }
 
-        $texto .= "\n🕒 *Horário:* " . $agora->format('H:i');
+        $texto .= "\n🕒 Horário: " . $agora->format('H:i');
         $texto .= "\n\nPor favor, registre no sistema após tomar! 👍";
 
        // envio whatsapp
@@ -136,15 +136,12 @@ Schedule::call(function () {
                 'json' => [
                     'app_id' => env('ONESIGNAL_APP_ID'),
                     'headings' => ['en' => '💊 Lembrete de Medicamento'],
-                    'contents' => ['en' => "Olá, {$primeiroNome}! É hora de tomar seus remédios."],
-                    // Aqui filtramos pelo ID do usuário (recomendo configurar no SDK web: OneSignal.setExternalUserId(userId))
-                    'filters' => [
-                        ['field' => 'tag', 'key' => 'user_id', 'relation' => '=', 'value' => (string)$userData['user_id']]
-                    ]
+                    'contents' => ['en' => $texto],
+                    'include_external_user_ids' => [(string)$userData['user_id']],
                 ]
             ]);
             
-            Log::info("✅ Notificação Push enviada para usuário ID: {$userData['user_id']}" . ' RESPONSE => ' .$response->getBody()->getContents());
+            //Log::info("✅ Notificação Push enviada para usuário ID: {$userData['user_id']}" . ' RESPONSE => ' .$response->getBody()->getContents());
         } catch (\Exception $e) {
             Log::error("❌ Erro OneSignal: " . $e->getMessage());
         }
