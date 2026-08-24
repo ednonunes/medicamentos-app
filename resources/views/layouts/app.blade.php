@@ -23,10 +23,13 @@
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
-            appId: "{{ env('ONESIGNAL_APP_ID') }}",
-            serviceWorkerPath: "public/OneSignalSDKWorker.js",
-            serviceWorkerParam: { scope: "/push/onesignal/" },
+                appId: "{{ env('ONESIGNAL_APP_ID') }}",
+                serviceWorkerPath: "public/OneSignalSDKWorker.js",
+                serviceWorkerParam: { scope: "/push/onesignal/" },
             });
+
+            // Força a exibição do convite deslizante imediatamente
+            OneSignal.Slidedown.promptPush({ force: true });
         });
         </script>
         
