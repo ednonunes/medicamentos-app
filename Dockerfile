@@ -1,6 +1,6 @@
 FROM php:8.3-fpm
 
-# Instala dependências do sistema
+# Instala dependências do sistema (incluindo netcat para o healthcheck do banco)
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
+    netcat-openbsd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Configuração GD
@@ -36,6 +37,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction \
 # Configuração do Entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Copia a configuração customizada do PHP-FPM para aceitar conexões TCP na porta 9000
+COPY local.ini /usr/local/etc/php-fpm.d/zz-local.ini
 
 # Define o script como CMD
 CMD ["/usr/local/bin/entrypoint.sh"]
