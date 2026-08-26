@@ -138,6 +138,7 @@ Schedule::call(function () {
                     'headings' => ['en' => '💊 Lembrete de Medicamento'],
                     'contents' => ['en' => $texto],
                     'include_external_user_ids' => [(string)$userData['user_id']],
+                    'url' => route('medications.agenda'),
                 ]
             ]);
             
